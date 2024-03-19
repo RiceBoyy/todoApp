@@ -1,0 +1,81 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+@using todoApp.Models
+
+@attribute [Authorize(Policy = "AuthorizedPolicy")];
+@inject CPRServices CprServices;
+@inject AuthenticationStateProvider AuthenticationStateProvider;
+
+<AuthorizeView>
+    <Authorized Context="authContext">
+        <div class="row" style="justify-content: center;">
+            <div class="col-md-4">
+                <div>
+                    <h1>Hello, @userName!</h1>
+                    <hr />
+                    <div style="padding: 20px 0px; width: 100%;">
+                        @if (userCpr != null)
+                        {
+                            <h3>Current CPR: @userCpr.CPRNr</h3>
+                        }
+
+                        <EditForm Model="@cprInputModel" OnValidSubmit="HandleValidSubmit">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+
+                            <div class="form-group">
+                                <label for="cpr">CPR Number:</label>
+                                <input id="cpr" class="form-control" placeholder="Input CPR-Number" @oninput="HandleInput" value="@cprNr" />
+                            </div>
+                            <br />
+                            <div style="width: 100%; display: flex; justify-content: center;">
+                                <button type="submit" class="btn btn-primary">@SubmitButtonText</button>
+                            </div>
+                        </EditForm>
+
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(message))
+                    {
+                        <div class="alert alert-success" style="position: fixed; bottom: 15px; right: 10px; z-index: 9999;">@message</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <h1>You need access</h1>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private CPR userCpr;
+    private string cprNr;
+    private string message;
+    private string SubmitButtonText => userCpr != null ? "Update CPR" : "Add CPR";
+    private string userName;
+    private CprInputModel cprInputModel = new CprInputModel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        userName = authState.User.Identity.Name;
+        userCpr = await CprServices.GetUserCprAsync();
+        if (userCpr != null)
+        {
+            cprNr = userCpr.CPRNr;
+        }
+    }
+
+    private void HandleInput(ChangeEventArgs e)
+    {
+        cprNr = e.Value.ToString();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        message = await CprServices.HandleCprSubmitAsync(cprNr); // Submit POST or UPDATE CPRNr
+        userCpr = await CprServices.GetUserCprAsync(); // Refresh the displayed CPR
+        cprNr = ""; // Clear the input field
+    }
+}

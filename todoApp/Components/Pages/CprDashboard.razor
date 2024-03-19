@@ -1,0 +1,188 @@
+﻿@page "/CprDashboard"
+@using Microsoft.AspNetCore.Authorization;
+@using Microsoft.EntityFrameworkCore;
+@using System.Security.Claims;
+@using todoApp.Models;
+
+@attribute [Authorize(Roles = "Admin")]
+@inject CPRServices CprServices;
+@inject AuthenticationStateProvider AuthenticationStateProvider;
+
+<AuthorizeView Roles="Admin">
+    <Authorized Context="authContext">
+        <div class="row" style="justify-content: center;">
+            <div class="col-md-6">
+                <h1>Admin CPR Dashboard</h1>
+                <hr />
+                <div>
+                    <!-- Find User -->
+                    <div style="padding: 20px 0px; width: 100%;">
+                        <EditForm Model="@cprInputModel" OnValidSubmit="FilterCprsByCprNumber">
+                            <div class="form-group" style="padding-bottom: 10px;">
+                                <label for="filterCpr">Filter by CPR Number:</label>
+                                <input id="filterCpr" class="form-control" placeholder="Enter CPR number to filter" @bind="cprFilter" />
+                            </div>
+
+                            <div style="width: 100%; display: flex; justify-content: center;">
+                                <button type="submit" class="btn btn-info">Filter CPR</button>
+                            </div>
+                        </EditForm>
+                    </div>
+
+                    <!-- Update User -->
+                    <div style="padding: 20px 0px; width: 100%;">
+                        <EditForm Model="@cprInputModel" OnValidSubmit="HandleValidSubmit">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+
+                            <div class="form-group">
+                                <label for="email">User Email:</label>
+                                <input id="email" class="form-control" placeholder="Enter user email" @bind="userEmail" />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cpr">CPR Number:</label>
+                                <input id="cprAdmin" class="form-control" placeholder="Input CPR-Number" @bind="cprNr" />
+                            </div>
+                            <br />
+
+                            <div style="width: 100%; display: flex; justify-content: center;">
+                                <button type="submit" class="btn btn-primary">@SubmitButtonText</button>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+                
+                <!-- Message from the system to the user -->
+                @if (!string.IsNullOrWhiteSpace(message))
+                {
+                    <div class="@($"alert {messageClass}")" style="position: fixed; bottom: 10px; left: 10px; z-index: 9999;">@message</div>
+                }
+
+            </div>
+            <hr />
+            <div>
+                <h2>All CPR Records</h2>
+                @if (allCprs != null && allCprs.Count > 0)
+                {
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>User ID</th>
+                                <th>CPR Number</th>
+                                <th>Actions</th> <!-- Add a header for the actions column -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cpr in allCprs)
+                            {
+                                <tr>
+                                    <td>@cpr.User</td>
+                                    <td>@cpr.CPRNr</td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteCpr(cpr)">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+
+                }
+                else
+                {
+                    <p>No CPR records found.</p>
+                }
+            </div>
+        </div>
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    private CPR userCpr;
+    private List<CPR> allCprs = new();
+
+    private string cprNr;
+    private string userEmail;
+    private string cprFilter;
+    private string message;
+    
+    private string SubmitButtonText => userCpr != null ? "Update CPR" : "Add CPR";
+    private CprInputModel cprInputModel = new CprInputModel();
+
+    private string messageClass = "alert-success";
+
+    protected override async Task OnInitializedAsync()
+    {
+        allCprs = await CprServices.GetAllCprsAsync();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (!string.IsNullOrWhiteSpace(userEmail))
+        {
+            message = await CprServices.HandleCprOnEmailSubmitAsync(userEmail, cprNr); // POST/UPDATE CPR by EMAIL
+            StateHasChanged();
+
+            await Task.Delay(2000); // Wait for 2 seconds
+
+            message = ""; // Clear the message
+            StateHasChanged();
+        }
+        else
+        {
+            message = "Please enter a valid email address.";
+        }
+    }
+
+    private async Task FilterCprsByCprNumber()
+    {
+        if (!string.IsNullOrWhiteSpace(cprFilter))
+        {
+            var filteredCprs = await CprServices.FilterCprsByNumberAsync(cprFilter);
+            if (filteredCprs.Count == 0)
+            {
+                message = $"No CPR records found for the CPR number: {cprFilter}.";
+                messageClass = "alert-warning";
+            }
+            else
+            {
+                message = "";
+            }
+            allCprs = filteredCprs;
+        }
+        else
+        {
+            allCprs = await CprServices.GetAllCprsAsync();
+            message = ""; // Clear the message
+        }
+
+        StateHasChanged();
+        await Task.Delay(2000); // Wait for 2 seconds
+
+        message = ""; // Clear the message
+        StateHasChanged();
+    }
+
+
+
+    private async Task DeleteCpr(CPR cpr)
+    {
+        if (cpr != null)
+        {
+            var result = await CprServices.DeleteCprAsync(cpr);
+            if (result)
+            {
+                message = "CPR record deleted successfully.";
+                allCprs = await CprServices.GetAllCprsAsync(); // Refresh the list
+            }
+            else
+            {
+                message = "Error deleting CPR record.";
+            }
+            StateHasChanged(); // Update the UI
+        }
+    }
+
+
+}
+

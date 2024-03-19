@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>aspnet-todoApp-08929f66-b54b-4785-92d3-d636e3bf9262</UserSecretsId>
+    <RuntimeIdentifiers>linux-x64</RuntimeIdentifiers>
+    <EnableSdkContainerDebugging>True</EnableSdkContainerDebugging>
+    <!--<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    --><!-- Added for Docker --><!--
+    <ContainerRepository>h5test</ContainerRepository>
+    <ContainerImageTag>T1</ContainerImageTag>-->
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.3" />
+    <PackageReference Include="QRCoder" Version="1.4.2" />
+  </ItemGroup>
+
+  <!--<ItemGroup>
+    --><!-- Added for docker linux --><!--
+    <ContainerPort Include="443" Type="tcp" />
+    <ContainerEnvironmentVariable Include="ASPNETCORE_HTTPS_PORTS">
+      <Value>8081</Value>
+    </ContainerEnvironmentVariable>
+    --><!-- To allow URL and Certificate --><!--
+    <ContainerEnvironmentVariable Include="ASPNETCORE_URLS">
+      <Value>https://+;http://+</Value>
+    </ContainerEnvironmentVariable>
+    <ContainerEnvironmentVariable Include="ASPNETCORE_Kestrel__Certificates__Default__Path">
+      <Value>/app/https/myCertifi.pfx</Value>
+    </ContainerEnvironmentVariable>
+    <ContainerEnvironmentVariable Include="ASPNETCORE_Kestrel__Certificates__Default__Password">
+      <Value>PassW0rd</Value>
+    </ContainerEnvironmentVariable>
+  </ItemGroup>-->
+
+</Project>
