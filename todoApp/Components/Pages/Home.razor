@@ -6,6 +6,9 @@
 @attribute [Authorize(Policy = "AuthorizedPolicy")];
 @inject CPRServices CprServices;
 @inject AuthenticationStateProvider AuthenticationStateProvider;
+@inject Code.HashingHandler _hashingHandler;
+@inject NavigationManager NavigationManager
+@inject CPRServices CprServices
 
 <AuthorizeView>
     <Authorized Context="authContext">
@@ -15,10 +18,6 @@
                     <h1>Hello, @userName!</h1>
                     <hr />
                     <div style="padding: 20px 0px; width: 100%;">
-                        @if (userCpr != null)
-                        {
-                            <h3>Current CPR: @userCpr.CPRNr</h3>
-                        }
 
                         <EditForm Model="@cprInputModel" OnValidSubmit="HandleValidSubmit">
                             <DataAnnotationsValidator />
@@ -26,7 +25,7 @@
 
                             <div class="form-group">
                                 <label for="cpr">CPR Number:</label>
-                                <input id="cpr" class="form-control" placeholder="Input CPR-Number" @oninput="HandleInput" value="@cprNr" />
+                                <input id="cpr" class="form-control" placeholder="Input CPR-Number" @bind="@cprNr" />
                             </div>
                             <br />
                             <div style="width: 100%; display: flex; justify-content: center;">
@@ -52,7 +51,7 @@
     private CPR userCpr;
     private string cprNr;
     private string message;
-    private string SubmitButtonText => userCpr != null ? "Update CPR" : "Add CPR";
+    private string SubmitButtonText => userCpr != null ? "Check CPR" : "Add CPR";
     private string userName;
     private CprInputModel cprInputModel = new CprInputModel();
 
@@ -65,17 +64,33 @@
         {
             cprNr = userCpr.CPRNr;
         }
+
+        string hashingValue = _hashingHandler.HMACHashing("1111");
+        string hashingValue2 = _hashingHandler.HMACHashing("1111");
+        bool matched = hashingValue == hashingValue2;
+
+        // specific type of hash
+        string test = _hashingHandler.BCRYPT_Hashing("1111");
+        bool test2 = _hashingHandler.BCRYPT_HashingValidation("1111", test); // returns true;
     }
 
-    private void HandleInput(ChangeEventArgs e)
-    {
-        cprNr = e.Value.ToString();
-    }
-
+    // handle submit on CPR number
     private async Task HandleValidSubmit()
     {
-        message = await CprServices.HandleCprSubmitAsync(cprNr); // Submit POST or UPDATE CPRNr
-        userCpr = await CprServices.GetUserCprAsync(); // Refresh the displayed CPR
-        cprNr = ""; // Clear the input field
+        bool isCprValid = await CprServices.HandleCprSubmitAsync(cprNr);
+        if (isCprValid)
+        {
+            // Navigate to the todo list page if CPR is correct or added
+            NavigationManager.NavigateTo("/todolist");
+        }
+        else
+        {
+            message = "Incorrect CPR number.";
+            StateHasChanged();
+            await Task.Delay(2000); // Wait for 2 seconds
+
+            message = ""; // Clear the message
+            StateHasChanged();
+        }
     }
 }

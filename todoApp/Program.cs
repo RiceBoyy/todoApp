@@ -22,6 +22,7 @@ builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 builder.Services.AddScoped<CPRServices>();
 builder.Services.AddScoped<ToDoListServices>();
+builder.Services.AddSingleton<HashingHandler>();
 builder.Services.AddSingleton<Roles>();
 
 

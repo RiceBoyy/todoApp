@@ -58,15 +58,13 @@
         var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
         // Fetch the CPR entry for the current user to get the CPRNr
-        var userCpr = await CPRServices.GetUserCprAsync(); // Assuming this method is fetching the correct CPR record.
+        var userCpr = await CPRServices.GetUserCprAsync(); 
         if (userCpr != null)
         {
             // Attempt to convert the CPRNr from string to int
             if (int.TryParse(userCpr.CPRNr, out int cprNr))
             {
                 userTodoItems = await ToDoListServices.GetTodoItemsByCPRNrAsync(cprNr);
-                // cprNr now contains the converted integer if TryParse returned true
-                // You can use cprNr here as needed
             }
         }
     }

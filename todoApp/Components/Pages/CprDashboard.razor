@@ -20,7 +20,7 @@
                         <EditForm Model="@cprInputModel" OnValidSubmit="FilterCprsByCprNumber">
                             <div class="form-group" style="padding-bottom: 10px;">
                                 <label for="filterCpr">Filter by CPR Number:</label>
-                                <input id="filterCpr" class="form-control" placeholder="Enter CPR number to filter" @bind="cprFilter" />
+                                <input id="filterCpr" class="form-control" placeholder="Enter CPR number to filter" @bind="userIdFilter" />
                             </div>
 
                             <div style="width: 100%; display: flex; justify-content: center;">
@@ -61,6 +61,8 @@
 
             </div>
             <hr />
+
+            <!-- lists display -->
             <div>
                 <h2>All CPR Records</h2>
                 @if (allCprs != null && allCprs.Count > 0)
@@ -70,7 +72,7 @@
                             <tr>
                                 <th>User ID</th>
                                 <th>CPR Number</th>
-                                <th>Actions</th> <!-- Add a header for the actions column -->
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -103,7 +105,7 @@
 
     private string cprNr;
     private string userEmail;
-    private string cprFilter;
+    private string userIdFilter;
     private string message;
     
     private string SubmitButtonText => userCpr != null ? "Update CPR" : "Add CPR";
@@ -120,7 +122,7 @@
     {
         if (!string.IsNullOrWhiteSpace(userEmail))
         {
-            message = await CprServices.HandleCprOnEmailSubmitAsync(userEmail, cprNr); // POST/UPDATE CPR by EMAIL
+            message = await CprServices.HandleCprOnEmailSubmitAsync(userEmail, cprNr); // POST OR UPDATE CPR by EMAIL
             StateHasChanged();
 
             await Task.Delay(2000); // Wait for 2 seconds
@@ -136,12 +138,12 @@
 
     private async Task FilterCprsByCprNumber()
     {
-        if (!string.IsNullOrWhiteSpace(cprFilter))
+        if (!string.IsNullOrWhiteSpace(userIdFilter))
         {
-            var filteredCprs = await CprServices.FilterCprsByNumberAsync(cprFilter);
+            var filteredCprs = await CprServices.FilterUserIdByNumberAsync(userIdFilter);
             if (filteredCprs.Count == 0)
             {
-                message = $"No CPR records found for the CPR number: {cprFilter}.";
+                message = $"No CPR records found for the CPR number: {userIdFilter}.";
                 messageClass = "alert-warning";
             }
             else

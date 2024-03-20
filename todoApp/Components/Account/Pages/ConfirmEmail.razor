@@ -3,7 +3,9 @@
 @using System.ComponentModel.DataAnnotations
 @using System.Globalization
 @using System.Text.Encodings.Web
-@using QRCoder
+@using SkiaSharp
+@using SkiaSharp.QrCode
+@using SkiaSharp.QrCode.Image
 
 @inject NavigationManager NavigationManager
 @inject UserManager<ApplicationUser> UserManager
@@ -17,7 +19,6 @@
 @using Microsoft.AspNetCore.WebUtilities
 @using System.Reflection.Emit
 @using static System.Runtime.CompilerServices.RuntimeHelpers
-@using System.Drawing
 @using todoApp.Components.Account.Pages.Manage
 @using todoApp.Data
 
@@ -119,25 +120,38 @@
             UrlEncoder.Encode(email),
             unformattedKey);
     }
-    
+
     private void generateQRImage(string authenticatorUri)
     {
-        QRCodeGenerator qrGenerator = new QRCodeGenerator();
-        QRCodeData qrCodeData = qrGenerator.CreateQrCode(authenticatorUri, QRCodeGenerator.ECCLevel.Q);
-        QRCode qrCode = new QRCode(qrCodeData);
+        using var generator = new QRCodeGenerator();
+        // Generate QrCode
+        var qr = generator.CreateQrCode(authenticatorUri, ECCLevel.L);
 
-        int pixelsPerModule = 5;
-        string darkColor = "#000000"; 
-        string lightColor = "#ffffff";
+        var info = new SKImageInfo(512, 512);
+        using var surface = SKSurface.Create(info);
+        var canvas = surface.Canvas;
+        canvas.Render(qr, info.Width, info.Height);
 
-        using (MemoryStream ms = new MemoryStream())
+        // Output to Stream -> File
+        using var image = surface.Snapshot();
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+        Stream stream = data.AsStream();
+
+        // -----------------------
+        using MemoryStream ms = new MemoryStream();
+        byte[] buffer = new byte[4096];
+        int bytesRead;
+
+        while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
         {
-            using (Bitmap qrBitmap = qrCode.GetGraphic(pixelsPerModule, darkColor, lightColor, true))
-            {
-                qrBitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                byte[] byteImage = ms.ToArray();
-                _qrImageSource = "data:image/png;base64," + Convert.ToBase64String(byteImage);
-            }
+            ms.Write(buffer, 0, bytesRead);
         }
+
+        ms.Seek(0, SeekOrigin.Begin);
+
+        // Convert the MemoryStream to a Base64 string
+        string base64 = Convert.ToBase64String(ms.ToArray());
+        _qrImageSource = "data:image/png;base64," + base64;
     }
+
 }
