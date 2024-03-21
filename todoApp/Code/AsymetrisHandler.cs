@@ -11,7 +11,7 @@ namespace todoApp.Code
         // store private key, in files  or db
         // file create, file exist, file readAll.
         private string? _privateKey;
-        public string? _publicKey;
+        public static string? _publicKey;
 
         public AsymetrisHandler()
         {
@@ -27,11 +27,21 @@ namespace todoApp.Code
             }
         }
         // ENCRYPT AS EARLY AS POSSIBLE
-        public string EncryptAsymetrisHandler(string textToEncrypt)
+        //public string EncryptAsymetrisHandler(string textToEncrypt)
+        //{
+        //    return Encrypter.Encrypters(textToEncrypt, _publicKey);
+        //}
+        public static string EcryptAsymtrisk(string textToEncrypt, string publicKey)
         {
-            return Encrypter.Encrypters(textToEncrypt, _publicKey);
-        }
+            using (RSACryptoServiceProvider rsaServiceProvider = new RSACryptoServiceProvider())
+            {
+                rsaServiceProvider.FromXmlString(publicKey);
+                byte[] byteArrayTextToEncrypt = System.Text.Encoding.UTF8.GetBytes(textToEncrypt);
+                byte[] encryptedData = rsaServiceProvider.Encrypt(byteArrayTextToEncrypt, true);
 
+                return Convert.ToBase64String(encryptedData);
+            }
+        }
         // DECRYPT AS EARLY AS POSSIBLE
         public string DecryptAsymtrisk(string textToDecrypt)
         {
@@ -45,4 +55,5 @@ namespace todoApp.Code
             }
         }
     }
+
 }
