@@ -76,7 +76,7 @@
         {
             if (int.TryParse(userCpr.CPRNr, out int cprNr))
             {
-                newTodoItem.UserId = cprNr;
+                // newTodoItem.UserId = cprNr;
                 await ToDoListServices.AddTodoItemAsync(newTodoItem);
 
                 // Reset the form and refresh the list

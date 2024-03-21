@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
 
+#nullable disable
 
 namespace todoApp.Migrations.Todo
 {
     /// <inheritdoc />
-    public partial class InitialTodoMigration : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -29,7 +30,7 @@ namespace todoApp.Migrations.Todo
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<int>(type: "int", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Item = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>

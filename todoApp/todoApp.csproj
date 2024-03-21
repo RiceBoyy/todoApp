@@ -23,6 +23,10 @@
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.7" />
     <PackageReference Include="SkiaSharp.QrCode" Version="0.7.0" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <Folder Include="Migrations\" />
+  </ItemGroup>
 
   <!--<ItemGroup>
     --><!-- Added for docker linux --><!--
