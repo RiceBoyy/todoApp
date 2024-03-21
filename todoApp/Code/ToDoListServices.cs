@@ -16,8 +16,9 @@ namespace todoApp.Code
 
         public async Task<List<TodoList>> GetTodoItemsByCPRNrAsync(int cprNr)
         {
+            // Assuming 'cprNr' is correctly mapped to 'UserId' in the context of your application
             return await _context.TodoLists
-                                 .Where(t => t.UserId == cprNr) // Now correctly using UserId
+                                 .Where(t => t.UserId == cprNr)
                                  .ToListAsync();
         }
 
@@ -36,6 +37,27 @@ namespace todoApp.Code
                 await _context.SaveChangesAsync();
             }
         }
-    }
 
+        public async Task DeleteAllTodoItemsByUserIdAsync(int userId)
+        {
+            // Retrieve all todo items for the specified user
+            var items = await _context.TodoLists
+                                      .Where(t => t.UserId == userId)
+                                      .ToListAsync();
+
+            // Remove all retrieved items
+            _context.TodoLists.RemoveRange(items);
+            await _context.SaveChangesAsync();
+        }
+        public async Task DeleteAllTodoItemsAsync()
+        {
+            // Retrieve all todo items
+            var allItems = await _context.TodoLists.ToListAsync();
+
+            // Remove all items
+            _context.TodoLists.RemoveRange(allItems);
+            await _context.SaveChangesAsync();
+        }
+
+    }
 }

@@ -60,8 +60,17 @@ public class CPRServices
     }
     public async Task<CPR> GetUserCprByEmailAsync(string email)
     {
-        var user = await _context.Cprs.FirstOrDefaultAsync(u => u.User == email);
-        return user != null ? await _context.Cprs.FirstOrDefaultAsync(c => c.User == user.Id.ToString()) : null;
+        // Fetch the user ID associated with the given email.
+        var userId = await GetUserIdByEmailAsync(email);
+
+        // If a user ID is found, fetch the corresponding CPR record.
+        if (!string.IsNullOrEmpty(userId))
+        {
+            var userCpr = await _context.Cprs.FirstOrDefaultAsync(u => u.User == userId);
+            return userCpr;
+        }
+        // If no user ID is found, or no corresponding CPR record exists, return null.
+        return null;
     }
     public async Task<List<CPR>> FilterUserIdByNumberAsync(string UserId)
     {

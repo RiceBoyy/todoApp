@@ -2,11 +2,15 @@
 @using Microsoft.AspNetCore.Authorization;
 @using Microsoft.EntityFrameworkCore;
 @using System.Security.Claims;
+@using todoApp.Code
 @using todoApp.Models;
 
 @attribute [Authorize(Roles = "Admin")]
 @inject CPRServices CprServices;
 @inject AuthenticationStateProvider AuthenticationStateProvider;
+@inject ToDoListServices ToDoListServices
+@inject IJSRuntime JSRuntime
+
 
 <AuthorizeView Roles="Admin">
     <Authorized Context="authContext">
@@ -17,16 +21,18 @@
                 <div>
                     <!-- Find User -->
                     <div style="padding: 20px 0px; width: 100%;">
-                        <EditForm Model="@cprInputModel" OnValidSubmit="FilterCprsByCprNumber">
-                            <div class="form-group" style="padding-bottom: 10px;">
-                                <label for="filterCpr">Filter by CPR Number:</label>
-                                <input id="filterCpr" class="form-control" placeholder="Enter CPR number to filter" @bind="userIdFilter" />
-                            </div>
+                            <EditForm Model="@cprInputModel" OnValidSubmit="FilterCprsByEmail">
+                                <!-- Renamed method -->
+                                <div class="form-group" style="padding-bottom: 10px;">
+                                    <label for="filterEmail">Filter by Email:</label> <!-- Updated label -->
+                                    <input id="filterEmail" class="form-control" placeholder="Enter Email to filter" @bind="emailFilter" /> <!-- Updated id and bind variable -->
+                                </div>
 
-                            <div style="width: 100%; display: flex; justify-content: center;">
-                                <button type="submit" class="btn btn-info">Filter CPR</button>
-                            </div>
-                        </EditForm>
+                                <div style="width: 100%; display: flex; justify-content: center;">
+                                    <button type="submit" class="btn btn-info">Filter CPR</button>
+                                </div>
+                            </EditForm>
+                        
                     </div>
 
                     <!-- Update User -->
@@ -65,6 +71,10 @@
             <!-- lists display -->
             <div>
                 <h2>All CPR Records</h2>
+                <!-- Button to trigger deletion of all todo items -->
+                <div class="mt-4">
+                    <button class="btn btn-danger" @onclick="DeleteAllTodoItems">Delete All Todo Items</button>
+                </div>
                 @if (allCprs != null && allCprs.Count > 0)
                 {
                     <table class="table">
@@ -82,7 +92,8 @@
                                     <td>@cpr.User</td>
                                     <td>@cpr.CPRNr</td>
                                     <td>
-                                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteCpr(cpr)">Delete</button>
+                                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteCpr(cpr)">Delete CPR</button>
+                                        <button class="btn btn-warning btn-sm" @onclick="() => DeleteAllTodosForUser(cpr.User)">Delete All Todos</button>
                                     </td>
                                 </tr>
                             }
@@ -105,7 +116,7 @@
 
     private string cprNr;
     private string userEmail;
-    private string userIdFilter;
+    private string emailFilter;
     private string message;
     
     private string SubmitButtonText => userCpr != null ? "Update CPR" : "Add CPR";
@@ -118,11 +129,14 @@
         allCprs = await CprServices.GetAllCprsAsync();
     }
 
+    // ADMIN is allowed to change the cpr of the user
+    // this is only for testing reasons but not actually a part of the project
     private async Task HandleValidSubmit()
     {
         if (!string.IsNullOrWhiteSpace(userEmail))
         {
-            message = await CprServices.HandleCprOnEmailSubmitAsync(userEmail, cprNr); // POST OR UPDATE CPR by EMAIL
+            // POST OR UPDATE CPR by EMAIL
+            message = await CprServices.HandleCprOnEmailSubmitAsync(userEmail, cprNr);
             StateHasChanged();
 
             await Task.Delay(2000); // Wait for 2 seconds
@@ -136,37 +150,8 @@
         }
     }
 
-    private async Task FilterCprsByCprNumber()
-    {
-        if (!string.IsNullOrWhiteSpace(userIdFilter))
-        {
-            var filteredCprs = await CprServices.FilterUserIdByNumberAsync(userIdFilter);
-            if (filteredCprs.Count == 0)
-            {
-                message = $"No CPR records found for the CPR number: {userIdFilter}.";
-                messageClass = "alert-warning";
-            }
-            else
-            {
-                message = "";
-            }
-            allCprs = filteredCprs;
-        }
-        else
-        {
-            allCprs = await CprServices.GetAllCprsAsync();
-            message = ""; // Clear the message
-        }
-
-        StateHasChanged();
-        await Task.Delay(2000); // Wait for 2 seconds
-
-        message = ""; // Clear the message
-        StateHasChanged();
-    }
-
-
-
+    // ADMIN this is only to test and see some functionality, 
+    // this should not be seen as a part of the project.
     private async Task DeleteCpr(CPR cpr)
     {
         if (cpr != null)
@@ -181,10 +166,80 @@
             {
                 message = "Error deleting CPR record.";
             }
-            StateHasChanged(); // Update the UI
+            StateHasChanged();
         }
     }
 
+    // ------------------------------------------------------------ ALLOWED FUNCTIONS
+    // ADMIN is allowed to check if the user has an cpr number.
+    private async Task FilterCprsByEmail()
+    {
+        if (!string.IsNullOrWhiteSpace(emailFilter))
+        {
+            var user = await CprServices.GetUserCprByEmailAsync(emailFilter);
+            if (user == null)
+            {
+                message = $"No CPR records found for the email: {emailFilter}.";
+                messageClass = "alert-warning";
+                allCprs.Clear();
+            }
+            else
+            {
+                allCprs = new List<CPR> { user };
+                message = "";
+            }
+        }
+        else
+        {
+            allCprs = await CprServices.GetAllCprsAsync();
+            message = "";
+        }
 
+        StateHasChanged();
+    }
+
+
+    // ADMIN SHOULD BE ABLE TO DELETE ALL ITEMS ON TODO LIST 
+    private async Task DeleteAllTodoItems()
+    {
+        // Confirm the action
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete ALL todo items for ALL users? This action cannot be undone.");
+        if (confirmed)
+        {
+            await ToDoListServices.DeleteAllTodoItemsAsync();
+            message = "All todo items have been successfully deleted.";
+            messageClass = "alert-danger";
+            StateHasChanged(); // Update UI to reflect the changes
+        }
+    }
+
+    // ADMIN SHOULD BE ABLE TO DELETE ALL ITEMS FOR ONE USER
+    private async Task DeleteAllTodosForUser(string userEmail)
+    {
+        var userId = await CprServices.GetUserIdByEmailAsync(userEmail);
+        if (!string.IsNullOrEmpty(userId))
+        {
+            // Assuming userId is a string and needs to be parsed as an int.
+            // Adjust this part based on your actual data types.
+            if (int.TryParse(userId, out int parsedUserId))
+            {
+                await ToDoListServices.DeleteAllTodoItemsByUserIdAsync(parsedUserId);
+                message = "All todo items for the user have been deleted.";
+                messageClass = "alert-success";
+            }
+            else
+            {
+                message = "Error parsing user ID.";
+                messageClass = "alert-danger";
+            }
+        }
+        else
+        {
+            message = "User not found.";
+            messageClass = "alert-warning";
+        }
+
+        StateHasChanged(); // Update UI to reflect the changes
+    }
 }
 
