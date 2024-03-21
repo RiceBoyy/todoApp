@@ -14,13 +14,10 @@ namespace todoApp.Code
             _context = context;
         }
 
-        public async Task<List<TodoList>> GetTodoItemsByCPRNrAsync(int cprNr)
+        public async Task<List<TodoList>> GetTodoItemsByUserIdAsync(string userId)
         {
-            // Assuming 'cprNr' is correctly mapped to 'UserId' in the context of your application
-            //return await _context.TodoLists
-            //                     .Where(t => t.UserId == cprNr)
-            //                     .ToListAsync();
-            return null;
+            // Fetch TodoList items filtered by string UserId
+            return await _context.TodoLists.Where(t => t.UserId == userId).ToListAsync();
         }
 
         public async Task AddTodoItemAsync(TodoList item)
@@ -31,6 +28,7 @@ namespace todoApp.Code
 
         public async Task DeleteTodoItemAsync(int itemId)
         {
+            // Assuming itemId is the primary key and of type int. If it's a string, change the method parameter type.
             var item = await _context.TodoLists.FindAsync(itemId);
             if (item != null)
             {
@@ -39,27 +37,20 @@ namespace todoApp.Code
             }
         }
 
-        public async Task DeleteAllTodoItemsByUserIdAsync(int userId)
+        // This method suggests it should filter deletions by userId, but currently, it does not take userId into account.
+        // Assuming you want to delete all items for a given userId:
+        public async Task DeleteAllTodoItemsByUserIdAsync(string userId)
         {
-            // Retrieve all todo items for the specified user
-            //var items = await _context.TodoLists
-            //                          .Where(t => t.UserId == userId)
-            //                          .ToListAsync();
-            
-
-            // Remove all retrieved items
-            // _context.TodoLists.RemoveRange(items);
+            var items = await _context.TodoLists.Where(t => t.UserId == userId).ToListAsync();
+            _context.TodoLists.RemoveRange(items);
             await _context.SaveChangesAsync();
         }
+
         public async Task DeleteAllTodoItemsAsync()
         {
-            // Retrieve all todo items
             var allItems = await _context.TodoLists.ToListAsync();
-
-            // Remove all items
             _context.TodoLists.RemoveRange(allItems);
             await _context.SaveChangesAsync();
         }
-
     }
 }

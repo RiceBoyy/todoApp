@@ -21,18 +21,17 @@
                 <div>
                     <!-- Find User -->
                     <div style="padding: 20px 0px; width: 100%;">
-                            <EditForm Model="@cprInputModel" OnValidSubmit="FilterCprsByEmail">
-                                <!-- Renamed method -->
-                                <div class="form-group" style="padding-bottom: 10px;">
-                                    <label for="filterEmail">Filter by Email:</label> <!-- Updated label -->
-                                    <input id="filterEmail" class="form-control" placeholder="Enter Email to filter" @bind="emailFilter" /> <!-- Updated id and bind variable -->
-                                </div>
+                        <EditForm Model="@cprInputModel" OnValidSubmit="FilterCprsByEmail">
+                            <!-- Renamed method -->
+                            <div class="form-group" style="padding-bottom: 10px;">
+                                <label for="filterEmail">Filter by Email:</label> <!-- Updated label -->
+                                <input id="filterEmail" class="form-control" placeholder="Enter Email to filter" @bind="emailFilter" /> <!-- Updated id and bind variable -->
+                            </div>
 
-                                <div style="width: 100%; display: flex; justify-content: center;">
-                                    <button type="submit" class="btn btn-info">Filter CPR</button>
-                                </div>
-                            </EditForm>
-                        
+                            <div style="width: 100%; display: flex; justify-content: center;">
+                                <button type="submit" class="btn btn-info">Filter CPR</button>
+                            </div>
+                        </EditForm>
                     </div>
 
                     <!-- Update User -->
@@ -198,7 +197,6 @@
         StateHasChanged();
     }
 
-
     // ADMIN SHOULD BE ABLE TO DELETE ALL ITEMS ON TODO LIST 
     private async Task DeleteAllTodoItems()
     {
@@ -209,33 +207,22 @@
             await ToDoListServices.DeleteAllTodoItemsAsync();
             message = "All todo items have been successfully deleted.";
             messageClass = "alert-danger";
-            StateHasChanged(); // Update UI to reflect the changes
+            StateHasChanged();
         }
     }
 
     // ADMIN SHOULD BE ABLE TO DELETE ALL ITEMS FOR ONE USER
-    private async Task DeleteAllTodosForUser(string userEmail)
+    private async Task DeleteAllTodosForUser(string userId)
     {
-        var userId = await CprServices.GetUserIdByEmailAsync(userEmail);
         if (!string.IsNullOrEmpty(userId))
         {
-            // Assuming userId is a string and needs to be parsed as an int.
-            // Adjust this part based on your actual data types.
-            if (int.TryParse(userId, out int parsedUserId))
-            {
-                await ToDoListServices.DeleteAllTodoItemsByUserIdAsync(parsedUserId);
-                message = "All todo items for the user have been deleted.";
-                messageClass = "alert-success";
-            }
-            else
-            {
-                message = "Error parsing user ID.";
-                messageClass = "alert-danger";
-            }
+            await ToDoListServices.DeleteAllTodoItemsByUserIdAsync(userId);
+            message = "All todo items for the user have been deleted.";
+            messageClass = "alert-success";
         }
         else
         {
-            message = "User not found.";
+            message = "Invalid user ID provided.";
             messageClass = "alert-warning";
         }
 

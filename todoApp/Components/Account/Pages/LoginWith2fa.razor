@@ -68,6 +68,8 @@
     {
         var authenticatorCode = Input.TwoFactorCode!.Replace(" ", string.Empty).Replace("-", string.Empty);
         var result = await SignInManager.TwoFactorAuthenticatorSignInAsync(authenticatorCode, RememberMe, Input.RememberMachine);
+        // there is TokenOptions.DefaultEmailProvider and TokenOptions.DefaultPhoneProvider
+        // var result = await SignInManager.TwoFactorSignInAsync(TokenOptions.DefaultEmailProvider, authenticatorCode, RememberMe, Input.RememberMachine);
         var userId = await UserManager.GetUserIdAsync(user);
 
         if (result.Succeeded)

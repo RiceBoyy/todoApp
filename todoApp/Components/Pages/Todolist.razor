@@ -57,49 +57,41 @@
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        // Fetch the CPR entry for the current user to get the CPRNr
-        var userCpr = await CPRServices.GetUserCprAsync(); 
-        if (userCpr != null)
+        if (!string.IsNullOrEmpty(userId))
         {
-            // Attempt to convert the CPRNr from string to int
-            if (int.TryParse(userCpr.CPRNr, out int cprNr))
-            {
-                userTodoItems = await ToDoListServices.GetTodoItemsByCPRNrAsync(cprNr);
-            }
+            userTodoItems = await ToDoListServices.GetTodoItemsByUserIdAsync(userId);
         }
     }
 
-    private async Task AddItem()
+    private async Task AddItem() 
     {
-        var userCpr = await CPRServices.GetUserCprAsync();
-        if (userCpr != null)
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!string.IsNullOrEmpty(userId))
         {
-            if (int.TryParse(userCpr.CPRNr, out int cprNr))
-            {
-                // newTodoItem.UserId = cprNr;
-                await ToDoListServices.AddTodoItemAsync(newTodoItem);
-
-                // Reset the form and refresh the list
-                newTodoItem = new TodoList();
-                userTodoItems = await ToDoListServices.GetTodoItemsByCPRNrAsync(cprNr);
-            }
-
+            newTodoItem.UserId = userId;
+            await ToDoListServices.AddTodoItemAsync(newTodoItem);
+    
+            // Refresh the list
+            userTodoItems = await ToDoListServices.GetTodoItemsByUserIdAsync(userId);
+            newTodoItem = new TodoList(); // Reset for next input
         }
     }
+
 
     private async Task DeleteItem(int itemId)
     {
-        var userCpr = await CPRServices.GetUserCprAsync();
-        if (userCpr != null)
+        await ToDoListServices.DeleteTodoItemAsync(itemId);
+
+        // Optionally, refresh the list to reflect changes.
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userId))
         {
-            if (int.TryParse(userCpr.CPRNr, out int cprNr))
-            {
-                await ToDoListServices.DeleteTodoItemAsync(itemId);
-                userTodoItems = await ToDoListServices.GetTodoItemsByCPRNrAsync(cprNr);
-            }
+            userTodoItems = await ToDoListServices.GetTodoItemsByUserIdAsync(userId);
         }
-        
-        
     }
+
 
 }

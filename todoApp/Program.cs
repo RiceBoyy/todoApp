@@ -23,6 +23,7 @@ builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuth
 builder.Services.AddScoped<CPRServices>();
 builder.Services.AddScoped<ToDoListServices>();
 builder.Services.AddSingleton<HashingHandler>();
+builder.Services.AddSingleton<SymetrisHandler>();
 builder.Services.AddSingleton<Roles>();
 
 

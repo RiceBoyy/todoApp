@@ -4,19 +4,21 @@ using System.Text;
 
 namespace todoApp.Code
 {
+
     public class HashingHandler
     {
         private readonly HashAlgorithmName _hashingAlgo = new HashAlgorithmName("SHA256");
 
         // DONT USE THIS TO CPR
         // if make a check in home to check if returntype is a string.
-        public string MBDHashing(string TextToHash, string returnType)
+        public dynamic MBDHashing(string TextToHash, string returnType)
         {
             var convertHash = "";
             MD5 md5 = MD5.Create();
             byte[] inputBytes = Encoding.ASCII.GetBytes(TextToHash);
             byte[] hash = md5.ComputeHash(inputBytes);
-            
+
+            // returnType == ReturnType.ToString
             if (returnType == "string")
             {
                 convertHash = Convert.ToBase64String(hash);

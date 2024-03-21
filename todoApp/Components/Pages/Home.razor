@@ -1,12 +1,14 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.Authorization
 @using System.Security.Claims
+@using todoApp.Code
 @using todoApp.Models
 
 @attribute [Authorize(Policy = "AuthorizedPolicy")];
 @inject CPRServices CprServices;
 @inject AuthenticationStateProvider AuthenticationStateProvider;
-@inject Code.HashingHandler _hashingHandler;
+@inject HashingHandler _hashingHandler;
+@inject SymetrisHandler _SymetrisHandler
 @inject NavigationManager NavigationManager
 @inject CPRServices CprServices
 
@@ -49,10 +51,10 @@
 
 @code {
     private CPR userCpr;
-    private string cprNr;
-    private string message;
+    private string cprNr = "";
+    private string message = "";
+    private string userName ="";
     private string SubmitButtonText => userCpr != null ? "Check CPR" : "Add CPR";
-    private string userName;
     private CprInputModel cprInputModel = new CprInputModel();
 
     protected override async Task OnInitializedAsync()
@@ -72,6 +74,10 @@
         // specific type of hash
         string test = _hashingHandler.BCRYPT_Hashing("1111");
         bool test2 = _hashingHandler.BCRYPT_HashingValidation("1111", test); // returns true;
+        cprNr = "";
+
+        string encrypt = _SymetrisHandler.Encrypt("is");
+        string dencrypt = _SymetrisHandler.Decrypt(encrypt);
     }
 
     // handle submit on CPR number
