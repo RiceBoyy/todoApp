@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using todoApp.Models;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace todoApp.Code
 {
@@ -17,45 +17,32 @@ namespace todoApp.Code
             _asymmetricHandler = asymmetricHandler; // Corrected the field name
         }
 
-        public async Task<List<TodoList>> GetEncryptedTodoItemsByUserIdAsync(string userId)
+        public async Task<List<TodoList>> GetTodoItemsByUserIdAsync(string userId)
         {
-            // Fetches only encrypted items, direct from the database
+            // Directly return encrypted items; decryption will be handled in the Razor component
             return await _context.TodoLists.Where(t => t.UserId == userId).ToListAsync();
         }
 
-        public async Task<List<TodoItemDto>> GetDecryptedTodoItemsByUserIdAsync(string userId)
-        {
-            // Fetches encrypted items and then maps them to DTOs with decrypted content
-            var encryptedItems = await GetEncryptedTodoItemsByUserIdAsync(userId);
-            return encryptedItems.Select(item => new TodoItemDto
-            {
-                Id = item.Id,
-                UserId = item.UserId,
-                Item = _asymmetricHandler.DecryptAsymtrisk(item.Item)
-            }).ToList();
-        }
 
-        public async Task AddTodoItemAsync(TodoItemDto newItemDto)
+        public async Task AddTodoItemAsync(TodoList newItem)
         {
-            var newItem = new TodoList
-            {
-                UserId = newItemDto.UserId,
-                Item = _asymmetricHandler.EncryptAsymtrisk(newItemDto.Item)
-            };
-
+            // Encrypt and add the new item
+            newItem.Item = _asymmetricHandler.EncryptAsymtrisk(newItem.Item);
             _context.TodoLists.Add(newItem);
+
+            // Save all changes to the database
             await _context.SaveChangesAsync();
         }
 
-
         public async Task DeleteTodoItemAsync(int itemId)
         {
-            // Directly find the item to delete without modifying other items
+            // Find the item to delete and remove it directly, without re-encrypting
             var itemToDelete = await _context.TodoLists.FindAsync(itemId);
             if (itemToDelete != null)
             {
                 _context.TodoLists.Remove(itemToDelete);
-                // Save the change to the database
+
+                // Save all changes to the database
                 await _context.SaveChangesAsync();
             }
         }
