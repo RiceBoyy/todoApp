@@ -15,12 +15,6 @@ public class TodoContext : DbContext
     // Optionally, you can override OnModelCreating to further configure your models
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Example: Configure a composite primary key
-        // modelBuilder.Entity<Cpr>().HasKey(c => new { c.Id, c.CprNr });
 
-        // Example: Configure a property to be required
-        // modelBuilder.Entity<Cpr>().Property(c => c.User).IsRequired();
-
-        // Add any additional configuration here
     }
 }

@@ -17,58 +17,48 @@ namespace todoApp.Code
             _asymmetricHandler = asymmetricHandler; // Corrected the field name
         }
 
-        public async Task<List<TodoList>> GetTodoItemsByUserIdAsync(string userId)
+        public async Task<List<TodoList>> GetEncryptedTodoItemsByUserIdAsync(string userId)
         {
-            var encryptedItems = await _context.TodoLists.Where(t => t.UserId == userId).ToListAsync();
-            var decryptedItems = encryptedItems.Select(item =>
-            {
-                item.Item = _asymmetricHandler.DecryptAsymtrisk(item.Item); // Use the instance for decryption
-                return item;
-            }).ToList();
-
-            return decryptedItems;
+            // Fetches only encrypted items, direct from the database
+            return await _context.TodoLists.Where(t => t.UserId == userId).ToListAsync();
         }
 
-        public async Task AddTodoItemAsync(TodoList newItem)
+        public async Task<List<TodoItemDto>> GetDecryptedTodoItemsByUserIdAsync(string userId)
         {
-            var todoItems = _context.TodoLists.Local.ToList();
-            foreach (var item in todoItems)
+            // Fetches encrypted items and then maps them to DTOs with decrypted content
+            var encryptedItems = await GetEncryptedTodoItemsByUserIdAsync(userId);
+            return encryptedItems.Select(item => new TodoItemDto
             {
-                item.Item = _asymmetricHandler.EncryptAsymtrisk(item.Item);
-            }
+                Id = item.Id,
+                UserId = item.UserId,
+                Item = _asymmetricHandler.DecryptAsymtrisk(item.Item)
+            }).ToList();
+        }
 
-            // Encrypt and add the new item
-            newItem.Item = _asymmetricHandler.EncryptAsymtrisk(newItem.Item);
+        public async Task AddTodoItemAsync(TodoItemDto newItemDto)
+        {
+            var newItem = new TodoList
+            {
+                UserId = newItemDto.UserId,
+                Item = _asymmetricHandler.EncryptAsymtrisk(newItemDto.Item)
+            };
+
             _context.TodoLists.Add(newItem);
-
-            // Now save all changes to the database
             await _context.SaveChangesAsync();
         }
 
 
         public async Task DeleteTodoItemAsync(int itemId)
         {
-            // Re-encrypt all items in the local context before deleting
-            var todoItems = _context.TodoLists.Local.ToList();
-            foreach (var item in todoItems)
-            {
-                if (!string.IsNullOrEmpty(item.Item))
-                {
-                    item.Item = _asymmetricHandler.EncryptAsymtrisk(item.Item);
-                }
-            }
-
-            // Find the item to delete and remove it
+            // Directly find the item to delete without modifying other items
             var itemToDelete = await _context.TodoLists.FindAsync(itemId);
             if (itemToDelete != null)
             {
                 _context.TodoLists.Remove(itemToDelete);
-
-                // Now save all changes to the database
+                // Save the change to the database
                 await _context.SaveChangesAsync();
             }
         }
-
 
         public async Task DeleteAllTodoItemsByUserIdAsync(string userId)
         {
