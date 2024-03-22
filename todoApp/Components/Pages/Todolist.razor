@@ -50,6 +50,7 @@
         </div>
     </Authorized>
 </AuthorizeView>
+
 @code {
     private List<TodoList> userTodoItems;
     private TodoList newTodoItem = new TodoList();
@@ -76,7 +77,6 @@
             }
         }
     }
-
 
     private async Task DeleteAllTodoItems()
     {
@@ -115,6 +115,7 @@
             newTodoItem = new TodoList();
         }
     }
+
     private async Task DeleteItem(int itemId)
     {
         await ToDoListServices.DeleteTodoItemAsync(itemId);
