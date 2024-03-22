@@ -24,6 +24,7 @@ builder.Services.AddScoped<CPRServices>();
 builder.Services.AddScoped<ToDoListServices>();
 builder.Services.AddSingleton<HashingHandler>();
 builder.Services.AddSingleton<SymetrisHandler>();
+builder.Services.AddSingleton<AsymmetricHandler>();
 builder.Services.AddSingleton<Roles>();
 
 

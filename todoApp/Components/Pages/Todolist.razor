@@ -8,6 +8,7 @@
 @inject CPRServices CPRServices
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ToDoListServices ToDoListServices
+@inject AsymmetricHandler AsymetrisHandler
 
 <AuthorizeView>
     <Authorized Context="authContext">
@@ -51,6 +52,7 @@
     private List<TodoList> userTodoItems;
     private TodoList newTodoItem = new TodoList();
     private CPR userCpr;
+    private string warningMessage = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -63,23 +65,33 @@
         }
     }
 
-    private async Task AddItem() 
+    private async Task AddItem()
     {
+        warningMessage = "";
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
+        if (string.IsNullOrWhiteSpace(newTodoItem.Item))
+        {
+            warningMessage = "Please enter a todo item.";
+            return;
+        }
+
         if (!string.IsNullOrEmpty(userId))
         {
-            newTodoItem.UserId = userId;
-            await ToDoListServices.AddTodoItemAsync(newTodoItem);
-    
+            var itemToSubmit = new TodoList
+                {
+                    UserId = userId,
+                    Item = newTodoItem.Item
+                };
+
+            await ToDoListServices.AddTodoItemAsync(itemToSubmit);
+
             // Refresh the list
             userTodoItems = await ToDoListServices.GetTodoItemsByUserIdAsync(userId);
-            newTodoItem = new TodoList(); // Reset for next input
+            newTodoItem = new TodoList();
         }
     }
-
-
     private async Task DeleteItem(int itemId)
     {
         await ToDoListServices.DeleteTodoItemAsync(itemId);
