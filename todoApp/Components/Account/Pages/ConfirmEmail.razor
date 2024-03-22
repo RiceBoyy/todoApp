@@ -21,23 +21,26 @@
 @using static System.Runtime.CompilerServices.RuntimeHelpers
 @using todoApp.Components.Account.Pages.Manage
 @using todoApp.Data
+@using Code
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IdentityRedirectManager RedirectManager
+@inject AuthenticationService AuthenticationService
 
 <PageTitle>Confirm email</PageTitle>
-
-<h1>Confirm email</h1>
 <StatusMessage Message="@statusMessage" />
-
-<div>
-    Please download/install Google Authenticator for 2face Auth
+<div class="row" style="justify-content: center;">
+    <div class="col-md-6">
+        <h1 style="width: 100%; text-align:center;">Confirm email</h1>
+        <hr />
+        <div style="width: 100%; display: flex; justify-content: center; padding-top: 10px; align-items: center;">
+            <h3>Please download/install Google Authenticator for 2face Auth</h3>
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <img src="@_qrImageSource" />
+            </div>
+        </div>
+    </div>
 </div>
-<div>
-    <img src="@_qrImageSource" />
-</div>
-
-
 
 @code {
     private const string AuthenticatorUriFormat = "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6";
@@ -60,26 +63,35 @@
         if (UserId is null || Code is null)
         {
             RedirectManager.RedirectTo("");
+            return;
         }
 
         var user = await UserManager.FindByIdAsync(UserId);
         if (user is null)
         {
             HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
-            statusMessage = $"Error loading user with ID {UserId}";
+            statusMessage = $"Error loading user with ID {UserId}.";
+            return;
+        }
+
+        var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
+        var result = await UserManager.ConfirmEmailAsync(user, code);
+        if (result.Succeeded)
+        {
+            statusMessage = "Thank you for confirming your email.";
+            await LoadSharedKeyAndQrCodeUriAsync(user);
+
+            // After confirming email, check for admin existence and potentially promote the user
+            await AuthenticationService.EnsureAdminUserAsync();
         }
         else
         {
-            var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
-            var result = await UserManager.ConfirmEmailAsync(user, code);
-            statusMessage = result.Succeeded ? "Thank you for confirming your email." : "Error confirming your email.";
-            await LoadSharedKeyAndQrCodeUriAsync(user);
+            statusMessage = "Error confirming your email.";
         }
     }
 
     private async ValueTask LoadSharedKeyAndQrCodeUriAsync(ApplicationUser user)
     {
-        // Load the authenticator key & QR code URI to display on the form
         var unformattedKey = await UserManager.GetAuthenticatorKeyAsync(user);
         if (string.IsNullOrEmpty(unformattedKey))
         {
@@ -127,7 +139,7 @@
         // Generate QrCode
         var qr = generator.CreateQrCode(authenticatorUri, ECCLevel.L);
 
-        var info = new SKImageInfo(512, 512);
+        var info = new SKImageInfo(300, 300);
         using var surface = SKSurface.Create(info);
         var canvas = surface.Canvas;
         canvas.Render(qr, info.Width, info.Height);
@@ -137,7 +149,6 @@
         using var data = image.Encode(SKEncodedImageFormat.Png, 100);
         Stream stream = data.AsStream();
 
-        // -----------------------
         using MemoryStream ms = new MemoryStream();
         byte[] buffer = new byte[4096];
         int bytesRead;

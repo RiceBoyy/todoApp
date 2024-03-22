@@ -12,7 +12,8 @@
 @inject IJSRuntime JSRuntime
 @inject IServiceProvider ServiceProvider
 @inject AuthenticationService AuthenticationService
-
+@inject NavigationManager NavigationManager;
+@inject Roles RoleService
 
 <AuthorizeView Roles="Admin">
     <Authorized Context="authContext">
@@ -24,9 +25,8 @@
                     <!-- Find User -->
                     <div style="padding: 20px 0px; width: 100%;">
                         <EditForm Model="@cprInputModel" OnValidSubmit="FilterCprsByEmail">
-                            <!-- Renamed method -->
                             <div class="form-group" style="padding-bottom: 10px;">
-                                <label for="filterEmail">Filter by Email:</label> <!-- Updated label -->
+                                <label for="filterEmail">Filter by Email:</label>
                                 <input id="filterEmail" class="form-control" placeholder="Enter Email to filter" @bind="emailFilter" /> <!-- Updated id and bind variable -->
                             </div>
 
@@ -75,6 +75,8 @@
                 <!-- Button to trigger deletion of all todo items -->
                 <div class="mt-4">
                     <button class="btn btn-danger" @onclick="DeleteAllTodoItems">Delete All Todo Items</button>
+                    <button class="btn btn-danger" @onclick="DeleteAllNormalUsers">Delete All Normal Users</button>
+                    <button class="btn btn-danger" @onclick="DeleteAllUsers">Delete All Users</button>
                 </div>
                 @if (allCprs != null && allCprs.Count > 0)
                 {
@@ -125,6 +127,7 @@
     private CprInputModel cprInputModel = new CprInputModel();
 
     private string messageClass = "alert-success";
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -236,14 +239,13 @@
     {
         try
         {
-            var roles = new Roles();
-            await roles.CreateUserRole(userId, "Admin", ServiceProvider);
-            message = $"{userId} has been promoted to admin.";
+            await RoleService.CreateUserRole(userId, "Admin", ServiceProvider);
+            message = "User has been promoted to admin.";
             messageClass = "alert-success";
         }
         catch (Exception ex)
         {
-            message = $"Error promoting {userId} to admin: {ex.Message}";
+            message = $"Error promoting user to admin: {ex.Message}";
             messageClass = "alert-danger";
         }
 
@@ -252,33 +254,21 @@
 
     private async Task DemoteFromAdmin(string userId)
     {
-        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        string currentUserId = authenticationState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-        // Prevent demotion if the targeted user is the current user
-        if (userId == currentUserId)
-        {
-            message = "You cannot demote yourself from admin.";
-            messageClass = "alert-warning";
-            StateHasChanged(); // Refresh UI to show the message
-            return;
-        }
-
         try
         {
-            var roles = new Roles();
-            await roles.RemoveUserRole(userId, "Admin", ServiceProvider);
-            message = $"User {userId} has been demoted from admin.";
+            await RoleService.RemoveUserRole(userId, "Admin", ServiceProvider);
+            message = "User has been demoted from admin.";
             messageClass = "alert-success";
         }
         catch (Exception ex)
         {
-            message = $"Error demoting user {userId} from admin: {ex.Message}";
+            message = $"Error demoting user from admin: {ex.Message}";
             messageClass = "alert-danger";
         }
 
         StateHasChanged(); // Refresh UI to show the message
     }
+    
     private async Task DeleteUserAsync(string userId)
     {
         if (!string.IsNullOrEmpty(userId))
@@ -304,6 +294,54 @@
             messageClass = "alert-warning";
         }
         StateHasChanged();
+    }
+
+    private async Task DeleteAllNormalUsers()
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete all normal users? This action cannot be undone.");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        var result = await AuthenticationService.DeleteAllNormalUsers();
+        if (result.Succeeded)
+        {
+            message = "All normal users have been successfully deleted.";
+            messageClass = "alert-success";
+            allCprs = await CprServices.GetAllCprsAsync();
+        }
+        else
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            message = $"Failed to delete all normal users: {errors}";
+            messageClass = "alert-danger";
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task DeleteAllUsers()
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete ALL users? This action cannot be undone.");
+        if (confirmed)
+        {
+            var result = await AuthenticationService.DeleteAllUsersAsync();
+            if (result.Succeeded)
+            {
+                message = "All users have been successfully deleted.";
+                messageClass = "alert-success";
+                StateHasChanged();
+
+                NavigationManager.NavigateTo("/");
+            }
+            else
+            {
+                message = "An error occurred while deleting users.";
+                messageClass = "alert-danger";
+                StateHasChanged();
+            }
+        }
     }
 }
 

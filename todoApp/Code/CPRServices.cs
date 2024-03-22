@@ -25,13 +25,7 @@ public class CPRServices
         _hashingHandler = hashingHandler;
     }
 
-    public async Task<CPR> GetUserCprAsync()
-    {
-        var userId = await GetCurrentUserIdAsync();
-        return await _context.Cprs.FirstOrDefaultAsync(c => c.User == userId);
-    }
-
-    // admin mode
+    // SUBMIT
     public async Task<string> HandleCprOnEmailSubmitAsync(string userEmail, string cprNumber)
     {
         var userId = await GetUserIdByEmailAsync(userEmail);
@@ -58,53 +52,6 @@ public class CPRServices
             return "CPR number updated successfully.";
         }
     }
-    public async Task<CPR> GetUserCprByEmailAsync(string email)
-    {
-        // Fetch the user ID associated with the given email.
-        var userId = await GetUserIdByEmailAsync(email);
-
-        // If a user ID is found, fetch the corresponding CPR record.
-        if (!string.IsNullOrEmpty(userId))
-        {
-            var userCpr = await _context.Cprs.FirstOrDefaultAsync(u => u.User == userId);
-            return userCpr;
-        }
-        // If no user ID is found, or no corresponding CPR record exists, return null.
-        return null;
-    }
-    public async Task<List<CPR>> FilterUserIdByNumberAsync(string UserId)
-    {
-        return await _context.Cprs
-                             .Where(c => c.User == UserId)
-                             .ToListAsync();
-    }
-    public async Task<string?> GetUserIdByEmailAsync(string email)
-    {
-        var user = await _userManager.FindByEmailAsync(email);
-        return user?.Id;
-    }
-    public async Task<List<CPR>> GetAllCprsAsync()
-    {
-        return await _context.Cprs.ToListAsync();
-    }
-    public async Task<bool> DeleteCprAsync(CPR cpr)
-    {
-        if (cpr == null) return false;
-
-        try
-        {
-            _context.Cprs.Remove(cpr);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-        catch (Exception)
-        {
-            // Handle any exceptions, such as logging
-            return false;
-        }
-    }
-
-    // User Mode
     public async Task<bool> HandleCprSubmitAsync(string cprNumber)
     {
         var userId = await GetCurrentUserIdAsync();
@@ -122,15 +69,58 @@ public class CPRServices
             string encryptedCprNumber = _hashingHandler.PBKDF2_Hashing(cprNumber, userId);
             _context.Cprs.Add(new CPR { User = userId, CPRNr = encryptedCprNumber });
             await _context.SaveChangesAsync();
-            return true; // New CPR added successfully
+            return true;
         }
     }
-
-
+    
+    // GET
     private async Task<string> GetCurrentUserIdAsync()
     {
         var authState = await _authStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
         return user.FindFirstValue(ClaimTypes.NameIdentifier);
     }
+    public async Task<CPR> GetUserCprAsync()
+    {
+        var userId = await GetCurrentUserIdAsync();
+        return await _context.Cprs.FirstOrDefaultAsync(c => c.User == userId);
+    }
+    public async Task<CPR> GetUserCprByEmailAsync(string email)
+    {
+        var userId = await GetUserIdByEmailAsync(email);
+        if (!string.IsNullOrEmpty(userId))
+        {
+            var userCpr = await _context.Cprs.FirstOrDefaultAsync(u => u.User == userId);
+            return userCpr;
+        }
+
+        return null;
+    }
+    public async Task<string?> GetUserIdByEmailAsync(string email)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        return user?.Id;
+    }
+    public async Task<List<CPR>> GetAllCprsAsync()
+    {
+        return await _context.Cprs.ToListAsync();
+    }
+
+    // DELETE
+    public async Task<bool> DeleteCprAsync(CPR cpr)
+    {
+        if (cpr == null) return false;
+
+        _context.Cprs.Remove(cpr);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+    // FILTER
+    public async Task<List<CPR>> FilterUserIdByNumberAsync(string UserId)
+    {
+        return await _context.Cprs
+                             .Where(c => c.User == UserId)
+                             .ToListAsync();
+    }
+
 }

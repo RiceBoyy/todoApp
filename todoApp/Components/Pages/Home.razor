@@ -66,18 +66,19 @@
         {
             cprNr = userCpr.CPRNr;
         }
-
-        string hashingValue = _hashingHandler.HMACHashing("1111");
-        string hashingValue2 = _hashingHandler.HMACHashing("1111");
-        bool matched = hashingValue == hashingValue2;
-
-        // specific type of hash
-        string test = _hashingHandler.BCRYPT_Hashing("1111");
-        bool test2 = _hashingHandler.BCRYPT_HashingValidation("1111", test); // returns true;
         cprNr = "";
 
-        string encrypt = _SymetrisHandler.Encrypt("is");
-        string dencrypt = _SymetrisHandler.Decrypt(encrypt);
+        // string hashingValue = _hashingHandler.HMACHashing("1111");
+        // string hashingValue2 = _hashingHandler.HMACHashing("1111");
+        // bool matched = hashingValue == hashingValue2;
+
+        // // specific type of hash
+        // string test = _hashingHandler.BCRYPT_Hashing("1111");
+        // bool test2 = _hashingHandler.BCRYPT_HashingValidation("1111", test); // returns true;
+        
+
+        // string encrypt = _SymetrisHandler.Encrypt("is");
+        // string dencrypt = _SymetrisHandler.Decrypt(encrypt);
     }
 
     // handle submit on CPR number
@@ -93,7 +94,7 @@
         {
             message = "Incorrect CPR number.";
             StateHasChanged();
-            await Task.Delay(2000); // Wait for 2 seconds
+            await Task.Delay(2000);
 
             message = ""; // Clear the message
             StateHasChanged();

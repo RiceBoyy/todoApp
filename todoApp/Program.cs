@@ -66,9 +66,9 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole("Admin");
     });
 
-    options.AddPolicy("EditorUserPolicy", policy =>
+    options.AddPolicy("SuperUserPolicy", policy =>
     {
-        policy.RequireRole("EditorUser");
+        policy.RequireRole("SuperUser");
     });
 });
 

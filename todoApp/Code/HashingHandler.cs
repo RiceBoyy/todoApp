@@ -9,22 +9,10 @@ namespace todoApp.Code
     {
         private readonly HashAlgorithmName _hashingAlgo = new HashAlgorithmName("SHA256");
 
-        // DONT USE THIS TO CPR
-        // if make a check in home to check if returntype is a string.
-        public dynamic MBDHashing(string TextToHash, string returnType)
+        private string AllIncludedHashing(string hashingAlgo)
         {
-            var convertHash = "";
-            MD5 md5 = MD5.Create();
-            byte[] inputBytes = Encoding.ASCII.GetBytes(TextToHash);
-            byte[] hash = md5.ComputeHash(inputBytes);
 
-            // returnType == ReturnType.ToString
-            if (returnType == "string")
-            {
-                convertHash = Convert.ToBase64String(hash);
-            }
-
-            return convertHash;
+            return "true";
         }
 
         // DONT USE SHA1
@@ -52,19 +40,18 @@ namespace todoApp.Code
         }
 
         // DO THIS IN CPR
-        public string PBKDF2_Hashing(string TextToHash, string id)
+        public string PBKDF2_Hashing(string TextToHash, string UserId)
         {
             byte[] inputBytes = Encoding.ASCII.GetBytes(TextToHash);
-            byte[] salt = Encoding.ASCII.GetBytes(id); // Use the 'id' as salt
+            byte[] salt = Encoding.ASCII.GetBytes(UserId);
 
-            // Use the predefined hash algorithm name
             int iterations = 10;
-            int outputBits = 256; // Assuming you want a 256-bit output, adjust as needed
+            int outputBits = 256;
 
             // Using Rfc2898DeriveBytes for PBKDF2 hashing
             using (var pbkdf2 = new Rfc2898DeriveBytes(inputBytes, salt, iterations, _hashingAlgo))
             {
-                byte[] hashedValue = pbkdf2.GetBytes(outputBits / 8); // Dividing by 8 to convert bits to bytes
+                byte[] hashedValue = pbkdf2.GetBytes(outputBits / 8);
                 return Convert.ToBase64String(hashedValue);
             }
         }

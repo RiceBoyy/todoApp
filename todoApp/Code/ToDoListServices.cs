@@ -9,17 +9,16 @@ namespace todoApp.Code
     public class ToDoListServices
     {
         private readonly TodoContext _context;
-        private readonly AsymmetricHandler _asymmetricHandler; // Corrected the class name
+        private readonly AsymmetricHandler _asymmetricHandler;
 
         public ToDoListServices(TodoContext context, AsymmetricHandler asymmetricHandler)
         {
             _context = context;
-            _asymmetricHandler = asymmetricHandler; // Corrected the field name
+            _asymmetricHandler = asymmetricHandler;
         }
 
         public async Task<List<TodoList>> GetTodoItemsByUserIdAsync(string userId)
         {
-            // Directly return encrypted items; decryption will be handled in the Razor component
             return await _context.TodoLists.Where(t => t.UserId == userId).ToListAsync();
         }
 

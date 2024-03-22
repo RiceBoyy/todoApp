@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using System;
 using System.Threading.Tasks;
-using todoApp.Data; // Ensure this uses your actual namespace
+using todoApp.Data;
 
 public class Roles
 {
@@ -17,13 +17,19 @@ public class Roles
             await roleManager.CreateAsync(new IdentityRole(role));
         }
 
-        // Find user by ID and add them to the role
+        // Find user by ID
         ApplicationUser appUser = await userManager.FindByIdAsync(userId);
         if (appUser != null)
         {
-            await userManager.AddToRoleAsync(appUser, role);
+            // Check if the user is already in the role
+            var isInRole = await userManager.IsInRoleAsync(appUser, role);
+            if (!isInRole)
+            {
+                await userManager.AddToRoleAsync(appUser, role);
+            }
         }
     }
+
 
     public async Task RemoveUserRole(string userId, string role, IServiceProvider serviceProvider)
     {
@@ -33,8 +39,13 @@ public class Roles
         ApplicationUser appUser = await userManager.FindByIdAsync(userId);
         if (appUser != null)
         {
-            // Remove user from the role
-            await userManager.RemoveFromRoleAsync(appUser, role);
+            // Check if the user is in the role before attempting to remove
+            var isInRole = await userManager.IsInRoleAsync(appUser, role);
+            if (isInRole)
+            {
+                await userManager.RemoveFromRoleAsync(appUser, role);
+            }
         }
     }
+
 }
