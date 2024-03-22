@@ -35,12 +35,11 @@ public class CPRServices
         }
 
         var existingCpr = await _context.Cprs.FirstOrDefaultAsync(c => c.User == userId);
-        string encryptedCprNumber = _hashingHandler.PBKDF2_Hashing(cprNumber, userId);
+        string encryptedCprNumber = _hashingHandler.AllIncludedHashing(cprNumber, userId);
 
         if (existingCpr == null)
         {
             _context.Cprs.Add(new CPR { User = userId, CPRNr = encryptedCprNumber });
-            // _context.Cprs.Add(new CPR { User = userId, CPRNr = EncryptCprNumber(cprNumber) });
 
             await _context.SaveChangesAsync();
             return "CPR number added successfully.";
@@ -59,20 +58,19 @@ public class CPRServices
 
         if (existingCpr != null)
         {
-            // Verify the input against the stored hash
-            string inputCprHash = _hashingHandler.PBKDF2_Hashing(cprNumber, userId);
-            return existingCpr.CPRNr.Equals(inputCprHash);
+            // Use the CheckHashing method to verify the input against the stored hash
+            bool isMatch = _hashingHandler.CheckHashing(cprNumber, userId, existingCpr.CPRNr);
+            return isMatch;
         }
         else
         {
             // If no existing CPR number, hash the input and store it
-            string encryptedCprNumber = _hashingHandler.PBKDF2_Hashing(cprNumber, userId);
+            string encryptedCprNumber = _hashingHandler.AllIncludedHashing(cprNumber, userId);
             _context.Cprs.Add(new CPR { User = userId, CPRNr = encryptedCprNumber });
             await _context.SaveChangesAsync();
             return true;
         }
     }
-    
     // GET
     private async Task<string> GetCurrentUserIdAsync()
     {

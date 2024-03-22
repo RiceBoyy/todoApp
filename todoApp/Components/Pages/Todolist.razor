@@ -8,6 +8,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ToDoListServices ToDoListServices
 @inject AsymmetricHandler AsymetrisHandler
+@inject IJSRuntime JSRuntime
 
 <AuthorizeView>
     <Authorized Context="authContext">
@@ -39,6 +40,11 @@
                         </ul>
                     }
 
+                    @if (isAdmin)
+                    {
+                        <button class="btn btn-danger mt-3" @onclick="DeleteAllTodoItems">Delete All Todo Items</button>
+                    }
+
                 </div>
             </div>
         </div>
@@ -49,15 +55,36 @@
     private TodoList newTodoItem = new TodoList();
     private CPR userCpr;
     private string warningMessage = "";
+    private bool isAdmin = false;
 
     protected override async Task OnInitializedAsync()
     {
-
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!string.IsNullOrEmpty(userId))
+        var user = authState.User;
+        isAdmin = user.IsInRole("Admin");
+
+        if (isAdmin)
         {
-            userTodoItems = await ToDoListServices.GetTodoItemsByUserIdAsync(userId);
+            userTodoItems = await ToDoListServices.GetAllTodoItemsAsync();
+        }
+        else
+        {
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                userTodoItems = await ToDoListServices.GetTodoItemsByUserIdAsync(userId);
+            }
+        }
+    }
+
+
+    private async Task DeleteAllTodoItems()
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete all todo items? This cannot be undone.");
+        if (confirmed)
+        {
+            await ToDoListServices.DeleteAllTodoItemsAsync();
+            userTodoItems.Clear();
         }
     }
 
