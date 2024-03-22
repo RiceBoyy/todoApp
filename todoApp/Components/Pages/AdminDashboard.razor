@@ -1,4 +1,4 @@
-﻿@page "/CprDashboard"
+﻿@page "/AdminDashboard"
 @using Microsoft.AspNetCore.Authorization;
 @using Microsoft.EntityFrameworkCore;
 @using System.Security.Claims;
@@ -11,6 +11,7 @@
 @inject ToDoListServices ToDoListServices
 @inject IJSRuntime JSRuntime
 @inject IServiceProvider ServiceProvider
+@inject AuthenticationService AuthenticationService
 
 
 <AuthorizeView Roles="Admin">
@@ -58,7 +59,7 @@
                         </EditForm>
                     </div>
                 </div>
-                
+
                 <!-- Message from the system to the user -->
                 @if (!string.IsNullOrWhiteSpace(message))
                 {
@@ -81,7 +82,6 @@
                         <thead>
                             <tr>
                                 <th>User ID</th>
-                                <th>CPR Number</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -90,12 +90,12 @@
                             {
                                 <tr>
                                     <td>@cpr.User</td>
-                                    <td>@cpr.CPRNr</td>
                                     <td>
                                         <button class="btn btn-danger btn-sm" @onclick="() => DeleteCpr(cpr)">Delete CPR</button>
                                         <button class="btn btn-warning btn-sm" @onclick="() => DeleteAllTodosForUser(cpr.User)">Delete All Todos</button>
                                         <button class="btn btn-success btn-sm" @onclick="() => PromoteToAdmin(cpr.User)">Make Admin</button>
                                         <button class="btn btn-secondary btn-sm" @onclick="() => DemoteFromAdmin(cpr.User)">Demote from Admin</button>
+                                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteUserAsync(cpr.User)">Delete User</button>
                                     </td>
                                 </tr>
                             }
@@ -120,7 +120,7 @@
     private string userEmail;
     private string emailFilter;
     private string message;
-    
+
     private string SubmitButtonText => userCpr != null ? "Update CPR" : "Add CPR";
     private CprInputModel cprInputModel = new CprInputModel();
 
@@ -152,7 +152,7 @@
         }
     }
 
-    // ADMIN this is only to test and see some functionality, 
+    // ADMIN this is only to test and see some functionality,
     // this should not be seen as a part of the project.
     private async Task DeleteCpr(CPR cpr)
     {
@@ -200,7 +200,7 @@
         StateHasChanged();
     }
 
-    // ADMIN SHOULD BE ABLE TO DELETE ALL ITEMS ON TODO LIST 
+    // ADMIN SHOULD BE ABLE TO DELETE ALL ITEMS ON TODO LIST
     private async Task DeleteAllTodoItems()
     {
         // Confirm the action
@@ -279,7 +279,31 @@
 
         StateHasChanged(); // Refresh UI to show the message
     }
-
-
+    private async Task DeleteUserAsync(string userId)
+    {
+        if (!string.IsNullOrEmpty(userId))
+        {
+            var result = await AuthenticationService.DeleteUserByIdAsync(userId); // Correctly call the method
+            if (result.Succeeded) // Check the Succeeded property
+            {
+                message = "User deleted successfully.";
+                messageClass = "alert-success";
+            }
+            else
+            {
+                // Join the error descriptions if any (optional, but often useful)
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                message = "Error deleting user: " + errors;
+                messageClass = "alert-danger";
+            }
+            allCprs = await CprServices.GetAllCprsAsync(); // Refresh the list to remove the deleted user's CPR record
+        }
+        else
+        {
+            message = "Invalid user ID provided.";
+            messageClass = "alert-warning";
+        }
+        StateHasChanged();
+    }
 }
 

@@ -26,7 +26,7 @@ builder.Services.AddSingleton<HashingHandler>();
 builder.Services.AddSingleton<SymetrisHandler>();
 builder.Services.AddSingleton<AsymmetricHandler>();
 builder.Services.AddSingleton<Roles>();
-
+builder.Services.AddScoped<AuthenticationService>();
 
 builder.Services.AddAuthentication(options =>
     {
@@ -64,6 +64,11 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("AdminPolicy", policy =>
     {
         policy.RequireRole("Admin");
+    });
+
+    options.AddPolicy("EditorUserPolicy", policy =>
+    {
+        policy.RequireRole("EditorUser");
     });
 });
 

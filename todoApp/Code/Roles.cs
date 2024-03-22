@@ -1,29 +1,40 @@
-﻿using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.Identity;
-using System.Data.Common;
-using System.Runtime.CompilerServices;
-using todoApp.Data;
+﻿using Microsoft.AspNetCore.Identity;
+using System;
+using System.Threading.Tasks;
+using todoApp.Data; // Ensure this uses your actual namespace
 
-namespace todoApp.Code
+public class Roles
 {
-    public class Roles
+    public async Task CreateUserRole(string userId, string role, IServiceProvider serviceProvider)
     {
-        public async Task CreateUserRole(string user, string role, IServiceProvider serviceProvider)
+        var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        // Check if the role exists, create if not
+        bool roleExists = await roleManager.RoleExistsAsync(role);
+        if (!roleExists)
         {
-            // call manager
-            var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-            var userManager = serviceProvider.GetRequiredService<UserManager<Data.ApplicationUser>>();
+            await roleManager.CreateAsync(new IdentityRole(role));
+        }
 
-            // create role in role table
-            bool UserRoleCheck = await roleManager.RoleExistsAsync(role);
-            if (!UserRoleCheck)
-            {
-                await roleManager.CreateAsync(new IdentityRole(role));
-            }
+        // Find user by ID and add them to the role
+        ApplicationUser appUser = await userManager.FindByIdAsync(userId);
+        if (appUser != null)
+        {
+            await userManager.AddToRoleAsync(appUser, role);
+        }
+    }
 
-            // add user in the role
-            Data.ApplicationUser identityUser = await userManager.FindByEmailAsync(user);
-            await userManager.AddToRoleAsync(identityUser, role);
+    public async Task RemoveUserRole(string userId, string role, IServiceProvider serviceProvider)
+    {
+        var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        // Find user by ID
+        ApplicationUser appUser = await userManager.FindByIdAsync(userId);
+        if (appUser != null)
+        {
+            // Remove user from the role
+            await userManager.RemoveFromRoleAsync(appUser, role);
         }
     }
 }

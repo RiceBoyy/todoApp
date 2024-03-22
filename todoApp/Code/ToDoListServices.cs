@@ -23,7 +23,6 @@ namespace todoApp.Code
             return await _context.TodoLists.Where(t => t.UserId == userId).ToListAsync();
         }
 
-
         public async Task AddTodoItemAsync(TodoList newItem)
         {
             // Encrypt and add the new item
